@@ -373,7 +373,13 @@
                     </div>
                     <button onclick="getIssues()">Get Issues</button>
                     <button onclick="createIssue()">Create New Issue</button>
+                    <div class="form-group">
+                        <label for="llm-issues-text">LLM Issue Extraction (Paste text to auto-create issues):</label>
+                        <textarea id="llm-issues-text" rows="6" placeholder="Paste requirements, bug list, or audit text here..."></textarea>
+                    </div>
+                    <button onclick="createIssuesFromText()">Extract & Create Issues with AI</button>
                     <div id="issues-result" class="result-container" style="display: none;"></div>
+                    <div id="llm-issues-result" class="result-container" style="display: none;"></div>
                 </div>
             </div>
         </div>
@@ -584,6 +590,31 @@
                 body: JSON.stringify({ title, body })
             });
             showResult('issues-result', result, !result.success);
+        }
+
+        async function createIssuesFromText() {
+            const token = document.getElementById('token').value;
+            if (!token) {
+                showResult('llm-issues-result', 'Authentication token required to create issues', true);
+                return;
+            }
+            const owner = document.getElementById('issues-owner').value;
+            const repo = document.getElementById('issues-repo').value;
+            const text = document.getElementById('llm-issues-text').value;
+            if (!owner || !repo) {
+                showResult('llm-issues-result', 'Please enter both owner and repository name', true);
+                return;
+            }
+            if (!text) {
+                showResult('llm-issues-result', 'Please paste some text to extract issues from', true);
+                return;
+            }
+            showLoading('llm-issues-result');
+            const result = await apiRequest(`/repos/${owner}/${repo}/llm-issues`, {
+                method: 'POST',
+                body: JSON.stringify({ text })
+            });
+            showResult('llm-issues-result', result, !result.success);
         }
     </script>
 </body>
