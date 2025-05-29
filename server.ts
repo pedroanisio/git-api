@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { extractGitIssues } from './llm';
@@ -37,7 +37,7 @@ async function githubRequest(endpoint: string, token: string | null = null, meth
 }
 
 // Get user information
-app.get('/api/user/:username', async (req: Request, res: Response) => {
+app.get('/api/user/:username', async (req, res) => {
   const { username } = req.params;
   const token = req.headers.authorization?.replace('Bearer ', '');
   const result = await githubRequest(`/users/${username}`, token);
@@ -45,7 +45,7 @@ app.get('/api/user/:username', async (req: Request, res: Response) => {
 });
 
 // Get user repositories
-app.get('/api/user/:username/repos', async (req: Request, res: Response) => {
+app.get('/api/user/:username/repos', async (req, res) => {
   const { username } = req.params;
   const token = req.headers.authorization?.replace('Bearer ', '');
   const { page = 1, per_page = 30, sort = 'updated' } = req.query;
@@ -57,7 +57,7 @@ app.get('/api/user/:username/repos', async (req: Request, res: Response) => {
 });
 
 // Get repository information
-app.get('/api/repos/:owner/:repo', async (req: Request, res: Response) => {
+app.get('/api/repos/:owner/:repo', async (req, res) => {
   const { owner, repo } = req.params;
   const token = req.headers.authorization?.replace('Bearer ', '');
   const result = await githubRequest(`/repos/${owner}/${repo}`, token);
@@ -65,7 +65,7 @@ app.get('/api/repos/:owner/:repo', async (req: Request, res: Response) => {
 });
 
 // Get repository issues
-app.get('/api/repos/:owner/:repo/issues', async (req: Request, res: Response) => {
+app.get('/api/repos/:owner/:repo/issues', async (req, res) => {
   const { owner, repo } = req.params;
   const token = req.headers.authorization?.replace('Bearer ', '');
   const { state = 'open', page = 1, per_page = 30 } = req.query;
@@ -77,7 +77,7 @@ app.get('/api/repos/:owner/:repo/issues', async (req: Request, res: Response) =>
 });
 
 // Create a new issue
-app.post('/api/repos/:owner/:repo/issues', async (req: Request, res: Response) => {
+app.post('/api/repos/:owner/:repo/issues', async (req, res) => {
   const { owner, repo } = req.params;
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) {
@@ -92,54 +92,8 @@ app.post('/api/repos/:owner/:repo/issues', async (req: Request, res: Response) =
   res.json(result);
 });
 
-// Get repository commits
-app.get('/api/repos/:owner/:repo/commits', async (req: Request, res: Response) => {
-  const { owner, repo } = req.params;
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  const { page = 1, per_page = 30 } = req.query;
-  const result = await githubRequest(
-    `/repos/${owner}/${repo}/commits?page=${page}&per_page=${per_page}`,
-    token
-  );
-  res.json(result);
-});
-
-// Search repositories
-app.get('/api/search/repositories', async (req: Request, res: Response) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  const { q, sort = 'stars', order = 'desc', page = 1, per_page = 30 } = req.query;
-  if (!q) {
-    return res.status(400).json({ success: false, error: 'Query parameter "q" is required' });
-  }
-  const result = await githubRequest(
-    `/search/repositories?q=${encodeURIComponent(q as string)}&sort=${sort}&order=${order}&page=${page}&per_page=${per_page}`,
-    token
-  );
-  res.json(result);
-});
-
-// Get authenticated user (requires token)
-app.get('/api/user', async (req: Request, res: Response) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) {
-    return res.status(401).json({ success: false, error: 'Authentication required' });
-  }
-  const result = await githubRequest('/user', token);
-  res.json(result);
-});
-
-// Serve the web UI
-app.get('/', (req: Request, res: Response) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// Health check
-app.get('/health', (req: Request, res: Response) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
-
 // LLM-powered issue creation
-app.post('/api/repos/:owner/:repo/llm-issues', async (req: Request, res: Response) => {
+app.post('/api/repos/:owner/:repo/llm-issues', async (req, res) => {
   const { owner, repo } = req.params;
   const token = req.headers.authorization?.replace('Bearer ', '');
   const { text } = req.body;
@@ -147,7 +101,7 @@ app.post('/api/repos/:owner/:repo/llm-issues', async (req: Request, res: Respons
   if (!text) return res.status(400).json({ success: false, error: 'Missing text in request body' });
   try {
     const issues = await extractGitIssues(text);
-    const results: Array<{ created: boolean; issue: any }> = [];
+    const results: any[] = [];
     for (const issue of issues) {
       const exists = await issueExists(owner, repo, issue.title, token);
       if (!exists) {
@@ -161,6 +115,52 @@ app.post('/api/repos/:owner/:repo/llm-issues', async (req: Request, res: Respons
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
   }
+});
+
+// Get repository commits
+app.get('/api/repos/:owner/:repo/commits', async (req, res) => {
+  const { owner, repo } = req.params;
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const { page = 1, per_page = 30 } = req.query;
+  const result = await githubRequest(
+    `/repos/${owner}/${repo}/commits?page=${page}&per_page=${per_page}`,
+    token
+  );
+  res.json(result);
+});
+
+// Search repositories
+app.get('/api/search/repositories', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const { q, sort = 'stars', order = 'desc', page = 1, per_page = 30 } = req.query;
+  if (!q) {
+    return res.status(400).json({ success: false, error: 'Query parameter "q" is required' });
+  }
+  const result = await githubRequest(
+    `/search/repositories?q=${encodeURIComponent(q as string)}&sort=${sort}&order=${order}&page=${page}&per_page=${per_page}`,
+    token
+  );
+  res.json(result);
+});
+
+// Get authenticated user (requires token)
+app.get('/api/user', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) {
+    return res.status(401).json({ success: false, error: 'Authentication required' });
+  }
+  const result = await githubRequest('/user', token);
+  res.json(result);
+});
+
+// Serve the web UI
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
 app.listen(PORT, () => {
