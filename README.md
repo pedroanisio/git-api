@@ -1,14 +1,15 @@
 # git-api
 
-Simple API server that interacts with the GitHub API along with a web UI to use it. A Node.js/Express backend with a clean HTML frontend.
+Simple API server that interacts with the GitHub API along with a web UI to use it. A Node.js/Express backend with a clean HTML frontend. **Now fully migrated to TypeScript.**
 
-## 🚀 **Backend API Server** (Node.js/Express)
+## 🚀 **Backend API Server** (Node.js/Express + TypeScript)
 
 **Features:**
 - **User endpoints**: Get user info, user repositories
 - **Repository endpoints**: Get repo details, commits, issues
 - **Search functionality**: Search repositories with filters
 - **Issue management**: View and create issues (with authentication)
+- **LLM-powered issue creation**: Extract and create issues from user text using OpenAI/Claude (see `/api/repos/:owner/:repo/llm-issues`)
 - **Authentication support**: Optional GitHub token for private data and higher rate limits
 - **Error handling**: Comprehensive error responses
 - **CORS enabled**: Ready for frontend integration
@@ -19,6 +20,7 @@ Simple API server that interacts with the GitHub API along with a web UI to use 
 - `GET /api/repos/:owner/:repo` - Get repository details
 - `GET /api/repos/:owner/:repo/issues` - Get repository issues
 - `POST /api/repos/:owner/:repo/issues` - Create new issue (requires auth)
+- `POST /api/repos/:owner/:repo/llm-issues` - Extract and create issues from user text (requires auth)
 - `GET /api/search/repositories` - Search repositories
 
 ## 🎨 **Web UI** (Modern HTML/CSS/JS)
@@ -42,23 +44,34 @@ Simple API server that interacts with the GitHub API along with a web UI to use 
 
 1. **Install dependencies:**
 ```bash
-npm init -y
-npm install express cors
+npm install
 ```
 
-2. **Save the server code** as `server.js`
+2. **Set up environment variables:**
+   - For LLM-powered issue extraction, set your OpenAI API key:
+   ```bash
+   export OPENAI_API_KEY=sk-...
+   ```
 
-3. **Create a `public` folder** and save the HTML as `public/index.html`
-
-4. **Run the server:**
+3. **Run the server (TypeScript):**
 ```bash
-node server.js
+npx ts-node server.ts
+```
+   Or build and run the compiled JavaScript:
+```bash
+npx tsc
+node dist/server.js
 ```
 
-5. **Access the web UI** at `http://localhost:3000`
+4. **Access the web UI** at `http://localhost:3000`
 
 ## 🔑 **Authentication (Optional)**
 - For public repositories and basic info, no token needed
 - For private repos, creating issues, or higher rate limits, get a token from 
 [GitHub Settings](https://github.com/settings/tokens)
 - Enter your token in the authentication section of the web UI
+
+## 🧹 **Project Notes**
+- All code is now in TypeScript (`.ts`). Legacy `.js` files have been removed.
+- Main entry point: `server.ts`
+- LLM integration: see `llm.ts` and `/api/repos/:owner/:repo/llm-issues` endpoint.
